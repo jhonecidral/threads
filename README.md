@@ -1,60 +1,87 @@
 import threading
 import time
+import os
 
-# Esteiras
-ESTEIRA_1 = 1
-ESTEIRA_2 = 0.5
-ESTEIRA_3 = 0.1
+# Variáveis globais para contagem e peso total
+counters = [0, 0, 0]  # Contagem de itens em cada esteira
+total_weight = 0  # Peso total dos itens processados
+mutex = threading.Lock()  # Mutex para sincronização de acesso a variáveis globais
+stop_flag = False  # Flag para indicar se a contagem deve parar
+paused = False  # Flag para indicar se a contagem está pausada
 
-# Mutex para controle de acesso
-mutex = threading.Lock()
+# Função para calcular o peso total a cada 1500 unidades
+def update_total_weight():
+    global total_weight
+    while True:
+        time.sleep(1)
+        if sum(counters) >= 1500:
+            with mutex:
+                total_weight = sum(counters) * (5 + 2 + 0.5)  # Simulação de pesos para cada esteira
+            print("Peso total atualizado:", total_weight, "kg")
+            for i in range(3):
+                counters[i] = 0
 
-# Contadores
-contagem_esteira_1 = 0
-contagem_esteira_2 = 0
-contagem_esteira_3 = 0
+# Função para simular a contagem de itens em cada esteira
+def count_items(esteira_index, delay):
+    global counters, stop_flag, paused
+    while not stop_flag:
+        if paused:
+            time.sleep(0.1)
+            continue
+        time.sleep(delay)
+        with mutex:
+            counters[esteira_index] += 1
+            print("Esteira", esteira_index + 1, "- Contagem atual:", counters[esteira_index])
 
+# Função para atualizar o display a cada 2 segundos
+def update_display():
+    while not stop_flag:
+        if paused:
+            time.sleep(0.1)
+            continue
+        time.sleep(2)
+        with mutex:
+            print("Total de itens contados:", sum(counters))
 
-def esteira(esteira_id, tempo):
-  
-  global contagem_esteira_1, contagem_esteira_2, contagem_esteira_3
-  while True:
-    time.sleep(tempo)
-    mutex.acquire()
-    if esteira_id == 1:
-      contagem_esteira_1 += 1
-    elif esteira_id == 2:
-      contagem_esteira_2 += 1
-    elif esteira_id == 3:
-      contagem_esteira_3 += 1
-    mutex.release()
+# Função para aguardar entrada do operador e pausar/retomar a contagem
+def wait_for_input():
+    global stop_flag, paused
+    while True:
+        input("Pressione Enter para pausar/retomar a contagem...")
+        paused = not paused
 
-
-def display():
-  global contagem_esteira_1, contagem_esteira_2, contagem_esteira_3
-  while True:
-    time.sleep(2)
-    mutex.acquire()
-    print(
-        f"Esteira 1: {contagem_esteira_1}, Esteira 2: {contagem_esteira_2}, Esteira 3: {contagem_esteira_3}"
-    )
-    mutex.release()
-
-
+# Função principal
 def main():
-  # Criação das threads
-  thread_1 = threading.Thread(target=esteira, args=(1, ESTEIRA_1))
-  thread_2 = threading.Thread(target=esteira, args=(2, ESTEIRA_2))
-  thread_3 = threading.Thread(target=esteira, args=(3, ESTEIRA_3))
-  thread_display = threading.Thread(target=display)
+    # Iniciar threads para contagem de itens em cada esteira
+    threads = []
+    for i in range(3):
+        if i == 0:
+            t = threading.Thread(target=count_items, args=(i, 1))
+        elif i == 1:
+            t = threading.Thread(target=count_items, args=(i, 0.5))
+        else:
+            t = threading.Thread(target=count_items, args=(i, 0.1))
+        threads.append(t)
+        t.start()
 
-  # Início das threads
-  thread_1.start()
-  thread_2.start()
-  thread_3.start()
-  thread_display.start()
- 
+    # Iniciar thread para atualizar o peso total
+    total_weight_thread = threading.Thread(target=update_total_weight)
+    total_weight_thread.start()
 
-if __name__ == "__main__":
-  main()
-  name = ["esteira 1",  "esteira 2", "esteira 3"]
+    # Iniciar thread para atualizar o display
+    display_thread = threading.Thread(target=update_display)
+    display_thread.start()
+
+    # Thread para aguardar entrada do operador e pausar/retomar a contagem
+    input_thread = threading.Thread(target=wait_for_input)
+    input_thread.start()
+
+    # Aguardar finalização de todas as threads
+    input_thread.join()
+    for t in threads:
+        t.join()
+    total_weight_thread.join()
+    display_thread.join()
+
+if _name_ == "_main_":
+    main()
