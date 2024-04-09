@@ -1,5 +1,5 @@
 import threading
-import time
+import time 
 import os
 
 # Variáveis globais para contagem e peso total
