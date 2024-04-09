@@ -3,11 +3,11 @@ import time
 import os
 
 # Variáveis globais para contagem e peso total
-counters = [0, 0, 0]  # Contagem de itens em cada esteira
-total_weight = 0  # Peso total dos itens processados
-mutex = threading.Lock()  # Mutex para sincronização de acesso a variáveis globais
-stop_flag = False  # Flag para indicar se a contagem deve parar
-paused = False  # Flag para indicar se a contagem está pausada
+counters = [0, 0, 0] 
+total_weight = 0  s
+mutex = threading.Lock()  
+stop_flag = False  
+paused = False
 
 # Função para calcular o peso total a cada 1500 unidades
 def update_total_weight():
@@ -16,7 +16,7 @@ def update_total_weight():
         time.sleep(1)
         if sum(counters) >= 1500:
             with mutex:
-                total_weight = sum(counters) * (5 + 2 + 0.5)  # Simulação de pesos para cada esteira
+                total_weight = sum(counters) * (5 + 2 + 0.5)  
             print("Peso total atualizado:", total_weight, "kg")
             for i in range(3):
                 counters[i] = 0
